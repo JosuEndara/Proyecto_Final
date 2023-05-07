@@ -2,24 +2,27 @@
 
 .data
 Bufferbitmap: .space 0x80000 # RESERVA BYTES PARA LA DISPLAY DEL BITMAP
-speedx:		.word	0		# VELOCIDAD DE INICIO PARA X
-speedy:		.word	0		# VELOCIDAD DE INICIO PARA Y
-posx:		.word	50		# POSICION X SERPIENTE
-posy:		.word	27		# POSICION Y SERPIENTE
-tail:		.word	7624		# POSICION INICIAL DE LA COLA DE LA SERPIENTE
-applex:		.word	32		# POSICION X MANZANA
-appley:		.word	16		# POSICION Y MANZANA
-snakeUp:	.word	0x00ff0000	# PIXEL DIBUJA CUANDO LA SERPIETE VA PARA ARRIBA
-snakeDown:	.word	0x01ff0000	# PIXEL DIBUJA CUANDO LA SERPIETE VA PARA ABAJO
-snakeLeft:	.word	0x02ff0000	# PIXEL DIBUJA CUANDO LA SERPIETE VA PARA IZQUIERDA
-snakeRight:	.word	0x03ff0000	# PIXEL DIBUJA CUANDO LA SERPIETE VA PARA DERECHA
-xConversion:	.word	64		# CONVERSOR PARA DISPLAY EN BITMAP
-yConversion:	.word	4		# CONVERSOR PARA DISPLAY EN BITMAP
+speedx: .word	0		# VELOCIDAD DE INICIO PARA X
+speedy: .word	0		# VELOCIDAD DE INICIO PARA Y
+posx: .word	50		# POSICION X SERPIENTE
+posy: .word	27		# POSICION Y SERPIENTE
+tail: .word	7624		# POSICION INICIAL DE LA COLA DE LA SERPIENTE
+applex:	 .word	32		# POSICION X MANZANA
+appley: .word	16		# POSICION Y MANZANA
+snakeUp: .word	0x00007F00	# PIXEL DIBUJA CUANDO LA SERPIETE VA PARA ARRIBA
+snakeDown: .word	0x01007F00	# PIXEL DIBUJA CUANDO LA SERPIETE VA PARA ABAJO
+snakeLeft: .word	0x02007F00	# PIXEL DIBUJA CUANDO LA SERPIETE VA PARA IZQUIERDA
+snakeRight: .word	0x03007F00	# PIXEL DIBUJA CUANDO LA SERPIETE VA PARA DERECHA
+convertFactX: .word	64		# CONVERSOR PARA DISPLAY EN BITMAP
+convertFactY: .word	4		# CONVERSOR PARA DISPLAY EN BITMAP
+SkyColor: .word 0xBBBBFFFF	
+RedColor: .word 0x00ff0000
+BlueColor: .word 0x000000FF
 
 .macro DisplayScenario
 la 	$t0, Bufferbitmap	# SE CARGA LA DIRECCION INICIAL DEL BITMAP
 	li 	$t1, 0x20000		# DECLARA UN ESPACIO SUFICIENTE PARA 512*256 pixels
-	li 	$t2, 0x00FFF00	# CARGA PIXEL COLOR VERDE
+	lw 	$t2, SkyColor	# CARGA PIXEL COLOR VERDE
 loop1:				#INGRESO LOOP
 	sw   	$t2, 0($t0)	#ALMACENA VALOR DE MEMORIA DE $t0 EN $t2, direccion inicial bitmap,pinta
 	addi 	$t0, $t0, 4 	# AVANZA SIGUIENTE POSICION DEL PIXEL EN DISPLAY
@@ -36,7 +39,7 @@ DisplayScenario
 	# SECCION BORDE SUPERIOR
 	la	$t0, Bufferbitmap	# SE CARGA LA DIRECCION INICIAL DEL BITMAP DENUEVO
 	addi	$t1,$zero, 64		# REG DE t1 = 64 
-	li 	$t2, 0x000000FF		# CARGA PIXEL COLOR AZUL
+	lw 	$t2, BlueColor		# CARGA PIXEL COLOR AZUL
 drawTop:				#INGRESO LOOP PARA DIBUJAR TOP
 	sw	$t2, 0($t0)		# ALMACENA VALOR DE MEMORIA DE $t2 EN $t0, direccion inicial bitmap,pinta
 	addi	$t0, $t0, 4		# SIGUIENTE PIXEL
@@ -108,7 +111,7 @@ moveUp:
 	jal	updateSnake	#SALTO HASTA LA SIGUIENTE SUBSECCION DE updateSnake
 	
 	
-	jal 	updateSnakeHeadPosition # SALTO HASTA LA SIGUIENTE SUBSECCION para mover a la serpiente
+	jal 	updateHead # SALTO HASTA LA SIGUIENTE SUBSECCION para mover a la serpiente
 	
 	j	justExit 	#SALTO HACIA justExit que ejecuta denuevo gameUpdateLoop
 
@@ -117,7 +120,7 @@ moveDown:
 	add	$a0, $s3, $zero	
 	jal	updateSnake	#SALTO HASTA LA SIGUIENTE SUBSECCION DE updateSnake
 	
-	jal 	updateSnakeHeadPosition # SALTO HASTA LA SIGUIENTE SUBSECCION para mover a la serpiente
+	jal 	updateHead # SALTO HASTA LA SIGUIENTE SUBSECCION para mover a la serpiente
 	
 	j	justExit	#SALTO HACIA justExit que ejecuta denuevo gameUpdateLoop
 	
@@ -126,7 +129,7 @@ moveLeft:
 	add	$a0, $s3, $zero	
 	jal	updateSnake
 	
-	jal 	updateSnakeHeadPosition
+	jal 	updateHead
 	
 	j	justExit	#SALTO HACIA justExit que ejecuta denuevo gameUpdateLoop
 	
@@ -135,7 +138,7 @@ moveRight:
 	add	$a0, $s3, $zero	
 	jal	updateSnake #SALTO HASTA LA SIGUIENTE SUBSECCION DE updateSnake
 
-	jal 	updateSnakeHeadPosition # SALTO HASTA LA SIGUIENTE SUBSECCION para mover a la serpiente
+	jal 	updateHead # SALTO HASTA LA SIGUIENTE SUBSECCION para mover a la serpiente
 
 	j	justExit	#SALTO HACIA justExit que ejecuta denuevo gameUpdateLoop
 
@@ -150,11 +153,11 @@ updateSnake:
 	
 	lw	$t0, posx		# DIBUJO CABEZA DE LA SERPIENTE, SE REGISTRA LAS POSICIONES DE LA SERPIENTE, TANTO X COMO Y
 	lw	$t1, posy		
-	lw	$t2, xConversion	# SE ASIGNA LOS VALORES PARA LO CONVERSION DE LOS VALORES DE POSICION A DISPLAY EN BITMAP
+	lw	$t2, convertFactX	# SE ASIGNA LOS VALORES PARA LO CONVERSION DE LOS VALORES DE POSICION A DISPLAY EN BITMAP
 	mult	$t1, $t2		# POSY * 64
 	mflo	$t3			# t3 = POSY * 64, SE MUEVE EL RESULTADO DE MULTIPLICACION HACIA REG $t3
 	add	$t3, $t3, $t0		# t3 = POSY * 64 + POSX
-	lw	$t2, yConversion	# t2 = 4
+	lw	$t2, convertFactY	# t2 = 4
 	mult	$t3, $t2		# (POSY * 64 + POSX) * 4
 	mflo	$t0			# t0, CONTENDRA EL RESULTADO DE LA MULTIPLICACION ANTERIOR
 	
@@ -205,58 +208,58 @@ setSpeedRight:
 	
 exitVelocitySet:
 	
-	li 	$t2, 0x00ff0000	# CARGO COLOR de manzana
+	lw 	$t2, RedColor	# CARGO COLOR de manzana
 	bne	$t2, $t4, headNotApple	# SI NO SON IGUALES, PIXEL COLOR ORIGINAL GUARDADO ANTERIORMENTE Y COLOR DE MANZANA, SE EJECUTA SUBSECCION HEADNOTAPPLE
 	
-	jal 	newAppleLocation
+	jal 	newLocApple
 	jal	drawApple	#SALTO DIBUJO NUEVA MANZANA
 	j	exitUpdateSnake
 	
 headNotApple:
 
-	li	$t2, 0x00FFF00		# CARGA COLOR VERDE
-	beq	$t2, $t4, validHeadSquare	
+	lw	$t2, SkyColor		# CARGA COLOR VERDE
+	beq	$t2, $t4, HeadValidation	
 	
 	addi 	$v0, $zero, 10	# GAME OVER
 	syscall
 	
-validHeadSquare:
+HeadValidation:
 
 	lw	$t0, tail		# t0 = tail
 	la 	$t1, Bufferbitmap	# CARGA DIRECCION DE BITMAP
 	add	$t2, $t0, $t1		# SE OBTIENE POSICION DE LA COLA EN BITMAP
-	li 	$t3, 0x00FFF00	        # CARGA COLOR VERDE
+	lw 	$t3, SkyColor	        # CARGA COLOR VERDE
 	lw	$t4, 0($t2)		# CARGA COLOR Y DIRECCION COLA
 	sw	$t3, 0($t2)		# SE REEMPLAZA COLOR DE COLA CON COLOR DE BACKGROUND
 	
 	lw	$t5, snakeUp			# SE CARGA EL VALOR ASIGNADO 
-	beq	$t5, $t4, setNextTailUp		#SI DIRECCION DE LA COLA Y EL COLOR A PINTAR SON IGUAL EJECUTA SUBSECCION DE ACTUALIZACION DE COLA CORRESPONDIENTE PARA QUE CAMINE LA SERPIENTE
+	beq	$t5, $t4, NewTailUp		#SI DIRECCION DE LA COLA Y EL COLOR A PINTAR SON IGUAL EJECUTA SUBSECCION DE ACTUALIZACION DE COLA CORRESPONDIENTE PARA QUE CAMINE LA SERPIENTE
 	
 	lw	$t5, snakeDown			# SE CARGA EL VALOR ASIGNADO 
-	beq	$t5, $t4, setNextTailDown	#SI DIRECCION DE LA COLA Y EL COLOR A PINTAR SON IGUAL EJECUTA SUBSECCION DE ACTUALIZACION DE COLA  CORRESPONDIENTE PARA QUE CAMINE LA SERPIENTE
+	beq	$t5, $t4, NewTailDown	#SI DIRECCION DE LA COLA Y EL COLOR A PINTAR SON IGUAL EJECUTA SUBSECCION DE ACTUALIZACION DE COLA  CORRESPONDIENTE PARA QUE CAMINE LA SERPIENTE
 	
 	lw	$t5, snakeLeft			# SE CARGA EL VALOR ASIGNADO 
-	beq	$t5, $t4, setNextTailLeft	#SI DIRECCION DE LA COLA Y EL COLOR A PINTAR SON IGUAL EJECUTA SUBSECCION DE ACTUALIZACION DE COLA CORRESPONDIENTE PARA QUE CAMINE LA SERPIENTE
+	beq	$t5, $t4, NewTailLeft	#SI DIRECCION DE LA COLA Y EL COLOR A PINTAR SON IGUAL EJECUTA SUBSECCION DE ACTUALIZACION DE COLA CORRESPONDIENTE PARA QUE CAMINE LA SERPIENTE
 	
 	lw	$t5, snakeRight			# SE CARGA EL VALOR ASIGNADO 
-	beq	$t5, $t4, setNextTailRight	#SI DIRECCION DE LA COLA Y EL COLOR A PINTAR SON IGUAL EJECUTA SUBSECCION DE ACTUALIZACION DE COLA  CORRESPONDIENTE PARA QUE CAMINE LA SERPIENTE
+	beq	$t5, $t4, NewTailRight	#SI DIRECCION DE LA COLA Y EL COLOR A PINTAR SON IGUAL EJECUTA SUBSECCION DE ACTUALIZACION DE COLA  CORRESPONDIENTE PARA QUE CAMINE LA SERPIENTE
 	
-setNextTailUp:
+NewTailUp:
 	addi	$t0, $t0, -256		# ACTUALIZACION DE COLA EJE X
 	sw	$t0, tail		# GUARDA O CARGA NUEVO VALOR DE COLA
 	j exitUpdateSnake
 	
-setNextTailDown:
+NewTailDown:
 	addi	$t0, $t0, 256		# ACTUALIZACION DE COLA  EJE X
 	sw	$t0, tail		# GUARDA O CARGA NUEVO VALOR DE COLA
 	j exitUpdateSnake
 	
-setNextTailLeft:
+NewTailLeft:
 	addi	$t0, $t0, -4		# ACTUALIZACION DE COLA  EJE Y
 	sw	$t0, tail		# GUARDA O CARGA NUEVO VALOR DE COLA
 	j exitUpdateSnake
 	
-setNextTailRight:
+NewTailRight:
 	addi	$t0, $t0, 4		# ACTUALIZACION DE COLA  EJE Y
 	sw	$t0, tail		# GUARDA O CARGA NUEVO VALOR DE COLA
 	j exitUpdateSnake
@@ -268,7 +271,7 @@ exitUpdateSnake:
 	addiu 	$sp, $sp, 24	# restores caller's stack pointer
 	jr 	$ra		# return to caller's code
 	
-updateSnakeHeadPosition:
+updateHead:
 	addiu 	$sp, $sp, -24	# allocate 24 bytes for stack
 	sw 	$fp, 0($sp)	# store caller's frame pointer
 	sw 	$ra, 4($sp)	# store caller's return address
@@ -296,11 +299,11 @@ drawApple:
 	
 	lw	$t0, applex		# CARGA POSICION DE MANZANA
 	lw	$t1, appley		# CARGA POSICION DE MANZANA
-	lw	$t2, xConversion	# CARGA CONVERSION A BITMAP EN X
+	lw	$t2, convertFactX	# CARGA CONVERSION A BITMAP EN X
 	mult	$t1, $t2		# CONVERSION
 	mflo	$t3			# t3 = appley * 64 CONVERSION
 	add	$t3, $t3, $t0		# t3 = appley * 64 + applex CONVERSION
-	lw	$t2, yConversion	# CARGA CONVERSION A BITMAP EN Y
+	lw	$t2, convertFactY	# CARGA CONVERSION A BITMAP EN Y
 	mult	$t3, $t2		# (yPos * 64 + applex) * 4
 	mflo	$t0			# t0 = (appley * 64 + applex) * 4 SE OBTIENE DIRECCION A DIBUJAR
 	
@@ -314,7 +317,7 @@ drawApple:
 	addiu 	$sp, $sp, 24	# restores caller's stack pointer
 	jr 	$ra		# return to caller's code		
 
-newAppleLocation:
+newLocApple:
 	addiu 	$sp, $sp, -24	# allocate 24 bytes for stack
 	sw 	$fp, 0($sp)	# store caller's frame pointer
 	sw 	$ra, 4($sp)	# store caller's return address
@@ -331,11 +334,11 @@ locRandom:
 	syscall
 	add	$t2, $zero, $a0	# NUMERO ALEATORIO PARA POSICION Y
 	
-	lw	$t3, xConversion	# t3 = 64, CARGA VALOR DE CONVERSION
+	lw	$t3, convertFactX	# t3 = 64, CARGA VALOR DE CONVERSION
 	mult	$t2, $t3		# CONVERSION NUM ALEATORIO Y
 	mflo	$t4			# ASIGNA DIRECCION
 	add	$t4, $t4, $t1		# SUMA NUM ALEATORIO X
-	lw	$t3, yConversion	# CARGA VALOR DE CONVERSION
+	lw	$t3, convertFactY	# CARGA VALOR DE CONVERSION
 	mult	$t3, $t4		# CALCULO NUEVA DIRECCION ALEATORIA
 	mflo	$t4			# ASGINA DIRECCION
 	
@@ -343,11 +346,11 @@ locRandom:
 	add	$t0, $t4, $t0		# POSICIONA POSICION ALEATORIA EN BITMPA
 	lw	$t5, 0($t0)		# GUARDA POSICION ORIGINAL
 	
-	li	$t6,  0x00FFF00		# CARGA COLOR VERDE
-	beq	$t5, $t6, goodApple	#SALTO POSICION PARA NUEVA MANZANA
+	lw	$t6,  SkyColor		# CARGA COLOR VERDE
+	beq	$t5, $t6, Apple	#SALTO POSICION PARA NUEVA MANZANA
 	j locRandom
 
-goodApple:
+Apple:
 	sw	$t1, applex
 	sw	$t2, appley	
 
