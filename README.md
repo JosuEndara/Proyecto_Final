@@ -6,4 +6,4 @@ Integrantes:
 - Sebastian Granizo
 - Daniel Paucar
 
-LINK GitHub Page:https://josuendara.github.io/Proyecto_Final/
+LINK GitHub Page: https://josuendara.github.io/Proyecto_Final/
