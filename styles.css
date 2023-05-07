@@ -1,0 +1,227 @@
+/* GENERALES */
+
+header {
+    margin-top: 30px;
+    width: 100%;
+}
+
+.menu {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    text-align: center;
+    list-style-type: none;
+}
+
+.menu a {
+    text-decoration: none;
+    color: black;
+    transition: all 300ms;
+}
+
+.menu a:hover {
+    text-decoration: none;
+    color: black;
+    font-weight: bolder;
+    cursor: pointer;
+}
+
+
+.titulo {
+    text-align: center;
+    margin-top: 20px;
+    background-color: black;
+    color: white;
+    width: 40%;
+    margin-left: 30%;
+    padding: 0.5%;
+    border-radius: 10px;
+}
+
+footer {
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+/* INDEX */
+
+.introduccion h3 {
+    text-align: center;
+    margin-top: 40px;
+    background-color: black;
+    color: white;
+    border-radius: 5px;
+    width: 15%;
+    margin-left: 42.5%;
+    padding: 0.5%;
+
+}
+
+.introduccion p {
+    width: 40%;
+    text-align: justify;
+    margin-left: 30%;
+    margin-top: 20px;
+    margin-bottom: 40px;
+}
+
+.caracteristicas-generales h3 {
+    text-align: center;
+    margin-top: 20px;
+    background-color: black;
+    color: white;
+    border-radius: 5px;
+    width: 15%;
+    margin-left: 42.5%;
+    padding: 0.5%;
+}
+
+.caracteristicas-generales ul {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    list-style-type: none;
+    font-weight: bold;
+    width: 100%;
+    text-align: center;
+    margin-top: 40px;
+}
+
+.temas h3 {
+    text-align: center;
+    margin-top: 20px;
+    background-color: black;
+    color: white;
+    border-radius: 5px;
+    width: 15%;
+    margin-left: 42.5%;
+    padding: 0.5%;
+}
+
+.temas ul {
+    margin-left: 43%;
+    margin-top: 20px;
+}
+
+/* OBJETIVOS */
+
+.objetivo-general h3 {
+    text-align: center;
+    margin-top: 30px;
+    background-color: black;
+    color: white;
+    border-radius: 5px;
+    width: 15%;
+    margin-left: 42.5%;
+    padding: 0.5%;
+}
+
+.objetivo-general p {
+    width: 40%;
+    text-align: justify;
+    margin-left: 30%;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.objetivos {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    margin-top: 70px;
+    margin-bottom: 70px;
+}
+
+.objetivo {
+    width: 50%;
+    text-align: justify;
+    margin-left: 28%;
+}
+
+/* PROPUESTA */
+
+.propuesta-funcional h3 {
+    text-align: center;
+    margin-top: 30px;
+    background-color: black;
+    color: white;
+    border-radius: 5px;
+    width: 15%;
+    margin-left: 42.5%;
+    padding: 0.5%;
+}
+
+.propuesta-funcional p {
+    width: 40%;
+    text-align: justify;
+    margin-left: 30%;
+    margin-top: 20px;
+    margin-bottom: 40px;
+}
+
+.propuesta-tecnica h3 {
+    text-align: center;
+    margin-top: 30px;
+    background-color: black;
+    color: white;
+    border-radius: 5px;
+    width: 15%;
+    margin-left: 42.5%;
+    padding: 0.5%;
+}
+
+.propuesta-tecnica p {
+    width: 40%;
+    text-align: justify;
+    margin-left: 30%;
+    margin-top: 20px;
+    margin-bottom: 40px;
+}
+
+
+/* CONCLUSIONES */
+
+.conclusiones {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 90%;
+    margin-left: 7.5%;
+    margin-top: 60px;
+    margin-bottom: 60px;
+}
+
+.conclusiones-proyecto h3 {
+    text-align: center;
+    margin-top: 30px;
+    background-color: black;
+    color: white;
+    border-radius: 5px;
+    width: 40%;
+    margin-left: 20%;
+    padding: 2%;
+}
+
+.conclusiones-clase h3 {
+    text-align: center;
+    margin-top: 30px;
+    background-color: black;
+    color: white;
+    border-radius: 5px;
+    width: 40%;
+    margin-left: 20%;
+    padding: 2%;
+}
+
+.conclusiones-proyecto p {
+    width: 60%;
+    text-align: justify;
+    margin-left: 10%;
+    margin-top: 20px;
+    margin-bottom: 40px;
+}
+
+.conclusiones-clase p {
+    width: 60%;
+    text-align: justify;
+    margin-left: 10%;
+    margin-top: 20px;
+    margin-bottom: 40px;
+}
