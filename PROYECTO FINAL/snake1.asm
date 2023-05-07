@@ -212,6 +212,7 @@ exitSpeed:
 	bne	$t2, $t4, headNotApple	# SI NO SON IGUALES, PIXEL COLOR ORIGINAL GUARDADO ANTERIORMENTE Y COLOR DE MANZANA, SE EJECUTA SUBSECCION HEADNOTAPPLE
 	
 	jal 	newLocApple
+	jal     eatAppleSound
 	jal	drawApple	#SALTO DIBUJO NUEVA MANZANA
 	j	exitUpdateSnake
 	
@@ -221,6 +222,7 @@ headNotApple:
 	beq	$t2, $t4, HeadValidation	
 	
 	addi 	$v0, $zero, 10	# GAME OVER
+	jal gameOverSound
 	syscall
 	
 HeadValidation:
@@ -270,6 +272,7 @@ exitUpdateSnake:
 	lw 	$fp, 0($sp)	# restores caller's frame pointer
 	addiu 	$sp, $sp, 24	# restores caller's stack pointer
 	jr 	$ra		# return to caller's code
+	
 	
 updateHead:
 	addiu 	$sp, $sp, -24	# allocate 24 bytes for stack
@@ -358,3 +361,19 @@ Apple:
 	lw 	$fp, 0($sp)	# restores caller's frame pointer
 	addiu 	$sp, $sp, 24	# restores caller's stack pointer
 	jr 	$ra		# return to caller's code	
+eatAppleSound:
+    li $v0, 31      # carga la llamada del sistema para el sonido
+    li $a0, 72      # establece la frecuencia del sonido (72 = C)
+    li $a1, 1000    # establece la duración del sonido (en milisegundos)
+    li $a2, 12      # establece el volumen del sonido (0-127)
+    li $a3, 127     # establecer canal de sonido (0-3)
+    syscall         # hace el sonido
+    jr $ra          # return
+gameOverSound:		
+	li $v0, 31# carga la llamada del sistema para el sonido
+	li $a0, 5# establece la frecuencia del sonido
+	li $a1, 2000 # establece la duración del sonido (en milisegundos)
+	li $a2, 0
+	li $a3, 127	
+	syscall	# hace el sonido
+
