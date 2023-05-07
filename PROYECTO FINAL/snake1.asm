@@ -1,6 +1,9 @@
 #ASIGNACION DE MEMORIA
 
 .data
+appleMsg: .asciiz "Manzanas comidas: " #USO DE MENSAJES PARA IMPRESION DE SCORE
+appleCount: .word 0
+newline: .asciiz "\n"			#SALTO DE LINEA
 Bufferbitmap: .space 0x80000 # RESERVA BYTES PARA LA DISPLAY DEL BITMAP
 speedx: .word	0		# VELOCIDAD DE INICIO PARA X
 speedy: .word	0		# VELOCIDAD DE INICIO PARA Y
@@ -15,17 +18,15 @@ snakeLeft: .word	0x02007F00	# PIXEL DIBUJA CUANDO LA SERPIETE VA PARA IZQUIERDA
 snakeRight: .word	0x03007F00	# PIXEL DIBUJA CUANDO LA SERPIETE VA PARA DERECHA
 convertFactX: .word	64		# CONVERSOR PARA DISPLAY EN BITMAP
 convertFactY: .word	4		# CONVERSOR PARA DISPLAY EN BITMAP
-SkyColor: .word 0xBBBBFFFF	
+SkyColor: .word 0xBBBBFFFF	#DECLARACION DE COLORES
 RedColor: .word 0x00ff0000
 BlueColor: .word 0x000000FF
-appleMsg: .asciiz "Manzanas comidas: "
-appleCount: .word 0
-newline: .asciiz "\n"
+
 
 .macro DisplayScenario
 la 	$t0, Bufferbitmap	# SE CARGA LA DIRECCION INICIAL DEL BITMAP
 	li 	$t1, 0x20000		# DECLARA UN ESPACIO SUFICIENTE PARA 512*256 pixels
-	lw 	$t2, SkyColor	# CARGA PIXEL COLOR VERDE
+	lw 	$t2, SkyColor	# CARGA PIXEL COLOR CIELO
 loop1:				#INGRESO LOOP
 	sw   	$t2, 0($t0)	#ALMACENA VALOR DE MEMORIA DE $t0 EN $t2, direccion inicial bitmap,pinta
 	addi 	$t0, $t0, 4 	# AVANZA SIGUIENTE POSICION DEL PIXEL EN DISPLAY
@@ -33,7 +34,7 @@ loop1:				#INGRESO LOOP
 	bnez 	$t1, loop1	# SE REPITE EL LOOP HASTA CUANDO EL NUMERO DE PIXELES SEA 0
 .end_macro 
 
-.macro TheAppleCount 
+.macro TheAppleCount  #MACRO UTILIZADO PARA MOSTRAR SCORE
     
 
     li      $v0,    4                  
@@ -243,7 +244,7 @@ exitSpeed:
 	
 headNotApple:
 
-	lw	$t2, SkyColor		# CARGA COLOR VERDE
+	lw	$t2, SkyColor		# CARGA COLOR CIELO
 	beq	$t2, $t4, HeadValidation	
 	jal gameOverSound
 	addi 	$v0, $zero, 10	# GAME OVER
@@ -255,7 +256,7 @@ HeadValidation:
 	lw	$t0, tail		# t0 = tail
 	la 	$t1, Bufferbitmap	# CARGA DIRECCION DE BITMAP
 	add	$t2, $t0, $t1		# SE OBTIENE POSICION DE LA COLA EN BITMAP
-	lw 	$t3, SkyColor	        # CARGA COLOR VERDE
+	lw 	$t3, SkyColor	        # CARGA COLOR CIELO
 	lw	$t4, 0($t2)		# CARGA COLOR Y DIRECCION COLA
 	sw	$t3, 0($t2)		# SE REEMPLAZA COLOR DE COLA CON COLOR DE BACKGROUND
 	
@@ -374,7 +375,7 @@ locRandom:
 	add	$t0, $t4, $t0		# POSICIONA POSICION ALEATORIA EN BITMPA
 	lw	$t5, 0($t0)		# GUARDA POSICION ORIGINAL
 	
-	lw	$t6,  SkyColor		# CARGA COLOR VERDE
+	lw	$t6,  SkyColor		# CARGA COLOR CIELO
 	beq	$t5, $t6, Apple	#SALTO POSICION PARA NUEVA MANZANA
 	j locRandom
 
