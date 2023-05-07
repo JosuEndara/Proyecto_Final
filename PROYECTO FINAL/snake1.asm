@@ -18,6 +18,9 @@ convertFactY: .word	4		# CONVERSOR PARA DISPLAY EN BITMAP
 SkyColor: .word 0xBBBBFFFF	
 RedColor: .word 0x00ff0000
 BlueColor: .word 0x000000FF
+appleMsg: .asciiz "Manzanas comidas: "
+appleCount: .word 0
+newline: .asciiz "\n"
 
 .macro DisplayScenario
 la 	$t0, Bufferbitmap	# SE CARGA LA DIRECCION INICIAL DEL BITMAP
@@ -29,6 +32,19 @@ loop1:				#INGRESO LOOP
 	addi 	$t1, $t1, -1	# SE DECREMENTA UNA POSICION DEL VALOR RESERVADO PARA EL BITMAP
 	bnez 	$t1, loop1	# SE REPITE EL LOOP HASTA CUANDO EL NUMERO DE PIXELES SEA 0
 .end_macro 
+
+.macro TheAppleCount 
+    
+
+    li      $v0,    4                  
+    la      $a0,    appleMsg
+    syscall 
+    
+    
+
+
+.end_macro 
+
 
 
 .text
@@ -213,16 +229,25 @@ exitSpeed:
 	
 	jal 	newLocApple
 	jal     eatAppleSound
-	jal	drawApple	#SALTO DIBUJO NUEVA MANZANA
+	
+	jal	drawApple	#SALTO DIBUJO NUEVA MANZANA 
+	TheAppleCount 
+	lw $t7, appleCount
+   	 addi $t7, $t7, 1
+   	 sw $t7,appleCount
+   	 li $v0, 1
+   	 lw $a0, appleCount
+   	 syscall
+    
 	j	exitUpdateSnake
 	
 headNotApple:
 
 	lw	$t2, SkyColor		# CARGA COLOR VERDE
 	beq	$t2, $t4, HeadValidation	
-	
-	addi 	$v0, $zero, 10	# GAME OVER
 	jal gameOverSound
+	addi 	$v0, $zero, 10	# GAME OVER
+	
 	syscall
 	
 HeadValidation:
@@ -376,4 +401,6 @@ gameOverSound:
 	li $a2, 0
 	li $a3, 127	
 	syscall	# hace el sonido
+	jr $ra 
 
+   
