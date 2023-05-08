@@ -1,32 +1,32 @@
 #ASIGNACION DE MEMORIA
 
 .data
-appleMsg: .asciiz "Manzanas comidas: " #USO DE MENSAJES PARA IMPRESION DE SCORE
-appleCount: .word 0
-newline: .asciiz "\n"			#SALTO DE LINEA
-Bufferbitmap: .space 0x80000 # RESERVA BYTES PARA LA DISPLAY DEL BITMAP
-speedx: .word	0		# VELOCIDAD DE INICIO PARA X
-speedy: .word	0		# VELOCIDAD DE INICIO PARA Y
-posx: .word	50		# POSICION X SERPIENTE
-posy: .word	27		# POSICION Y SERPIENTE
-tail: .word	7624		# POSICION INICIAL DE LA COLA DE LA SERPIENTE
-applex:	 .word	32		# POSICION X MANZANA
-appley: .word	16		# POSICION Y MANZANA
-snakeUp: .word	0x00007F00	# PIXEL DIBUJA CUANDO LA SERPIETE VA PARA ARRIBA
-snakeDown: .word	0x01007F00	# PIXEL DIBUJA CUANDO LA SERPIETE VA PARA ABAJO
-snakeLeft: .word	0x02007F00	# PIXEL DIBUJA CUANDO LA SERPIETE VA PARA IZQUIERDA
-snakeRight: .word	0x03007F00	# PIXEL DIBUJA CUANDO LA SERPIETE VA PARA DERECHA
+Bufferbitmap: .space 0x80000            # RESERVA BYTES PARA LA DISPLAY DEL BITMAP
+speedx:       .word	0		# VELOCIDAD DE INICIO PARA X
+speedy:       .word	0		# VELOCIDAD DE INICIO PARA Y
+posx:         .word	50		# POSICION X SERPIENTE
+posy:         .word	27		# POSICION Y SERPIENTE
+tail:         .word	7624		# POSICION INICIAL DE LA COLA DE LA SERPIENTE
+applex:	      .word	32		# POSICION X MANZANA
+appley:       .word	16		# POSICION Y MANZANA
+snakeUp:      .word	0x00007F00	# PIXEL DIBUJA CUANDO LA SERPIETE VA PARA ARRIBA
+snakeDown:    .word	0x01007F00	# PIXEL DIBUJA CUANDO LA SERPIETE VA PARA ABAJO
+snakeLeft:    .word	0x02007F00	# PIXEL DIBUJA CUANDO LA SERPIETE VA PARA IZQUIERDA
+snakeRight:   .word	0x03007F00	# PIXEL DIBUJA CUANDO LA SERPIETE VA PARA DERECHA
 convertFactX: .word	64		# CONVERSOR PARA DISPLAY EN BITMAP
 convertFactY: .word	4		# CONVERSOR PARA DISPLAY EN BITMAP
-SkyColor: .word 0xBBBBFFFF	#DECLARACION DE COLORES
-RedColor: .word 0x00ff0000
-BlueColor: .word 0x000000FF
-
+SkyColor:     .word     0xBBBBFFFF	
+RedColor:     .word     0x00ff0000
+BlueColor:    .word     0x000000FF
+appleMsg:     .asciiz   "\nManzanas comidas: "
+appleCount:   .word     0
+newline:      .asciiz   "\n"
+finDelJuego:  .asciiz   "\n¡Fin del juego! Gracias por jugar.\n"
 
 .macro DisplayScenario
 la 	$t0, Bufferbitmap	# SE CARGA LA DIRECCION INICIAL DEL BITMAP
-	li 	$t1, 0x20000		# DECLARA UN ESPACIO SUFICIENTE PARA 512*256 pixels
-	lw 	$t2, SkyColor	# CARGA PIXEL COLOR CIELO
+	li 	$t1, 0x20000	# DECLARA UN ESPACIO SUFICIENTE PARA 512*256 pixels
+	lw 	$t2, SkyColor	# CARGA PIXEL COLOR VERDE
 loop1:				#INGRESO LOOP
 	sw   	$t2, 0($t0)	#ALMACENA VALOR DE MEMORIA DE $t0 EN $t2, direccion inicial bitmap,pinta
 	addi 	$t0, $t0, 4 	# AVANZA SIGUIENTE POSICION DEL PIXEL EN DISPLAY
@@ -34,81 +34,87 @@ loop1:				#INGRESO LOOP
 	bnez 	$t1, loop1	# SE REPITE EL LOOP HASTA CUANDO EL NUMERO DE PIXELES SEA 0
 .end_macro 
 
-.macro TheAppleCount  #MACRO UTILIZADO PARA MOSTRAR SCORE
-    
+.macro DrawBorder(%x)
+loop2:
+	sw   	$t2, 0($t0)	#ALMACENA VALOR DE MEMORIA DE $t0 EN $t2, direccion inicial bitmap,pinta
+	addi 	$t0, $t0, %x 	# AVANZA SIGUIENTE POSICION DEL PIXEL EN DISPLAY
+	addi 	$t1, $t1, -1	# SE DECREMENTA UNA POSICION DEL VALOR RESERVADO PARA EL BITMAP
+	bnez 	$t1, loop2	# SE REPITE EL LOOP HASTA CUANDO EL NUMERO DE PIXELES SEA 0
 
+.end_macro
+
+
+.macro TheAppleCount   
     li      $v0,    4                  
     la      $a0,    appleMsg
     syscall 
-    
-    
-
-
 .end_macro 
 
 
+.macro moveSnake
+	add	$a0, $s3, $zero	
+	jal	updateSnake	# SALTO HASTA LA SIGUIENTE SUBSECCION DE updateSnake
+	jal 	updateHead 	# SALTO HASTA LA SIGUIENTE SUBSECCION para mover a la serpiente
+	j	justExit 	# SALTO HACIA justExit que ejecuta denuevo gameUpdateLoop
+.end_macro
 
-.text
-#DIBUJO DE BITMAP DISPLAY
-DisplayScenario
-### DIBUJO DE BORDES DEL BITMAP
+.macro speed (%x,%y)
+	addi	$t5, $zero, %x		# SETEO VELOCIDAD X
+	addi	$t6, $zero, %y		# SETEO VELOCIDAD Y
+	sw	$t5, speedx		# SE GUARDA EN LA SPEEDX EL VALOR CORRESPONDIENTE A ESA VELOCIDAD
+	sw	$t6, speedy		# SE GUARDA EN LA SPEEDY EL VALOR CORRESPONDIENTE A ESA VELOCIDAD
+	j exitSpeed
+.end_macro 
 	
+	
+.macro newTail(%x)
+	addi	$t0, $t0, %x		# ACTUALIZACION DE COLA SEGUN EL EJE
+	sw	$t0, tail		# GUARDA O CARGA NUEVO VALOR DE COLA
+	j exitUpdateSnake
+.end_macro
+.text
+	#DIBUJO DE BITMAP DISPLAY
+	DisplayScenario
+	
+	#DIBUJO DE BORDES DEL BITMAP
 	# SECCION BORDE SUPERIOR
 	la	$t0, Bufferbitmap	# SE CARGA LA DIRECCION INICIAL DEL BITMAP DENUEVO
 	addi	$t1,$zero, 64		# REG DE t1 = 64 
 	lw 	$t2, BlueColor		# CARGA PIXEL COLOR AZUL
-drawTop:				#INGRESO LOOP PARA DIBUJAR TOP
-	sw	$t2, 0($t0)		# ALMACENA VALOR DE MEMORIA DE $t2 EN $t0, direccion inicial bitmap,pinta
-	addi	$t0, $t0, 4		# SIGUIENTE PIXEL
-	addi	$t1, $t1, -1		# DECRECE CUENTA DE PIXEL
-	bnez	$t1, drawTop		# SE REPITE EL LOOP HASTA CUANDO EL NUMERO DE PIXELES SEA 0
+	DrawBorder(4)
 	
 	# SECCION BORDE INFERIOR
 	la	$t0, Bufferbitmap	# SE CARGA LA DIRECCION INICIAL DEL BITMAP DENUEVO
 	addi	$t0, $t0, 7936		# SETEA PIXEL ABAJO IZQUIERDA
-	addi	$t1, $zero, 64		# REG DE t1 = 64 
-
-drawBot:				#INGRESO LOOP PARA DIBUJAR BOT
-	sw	$t2, 0($t0)		# ALMACENA VALOR DE MEMORIA DE $t2 EN $t0, direccion inicial bitmap,pinta con color
-	addi	$t0, $t0, 4		# SIGUIENTE PIXEL
-	addi	$t1, $t1, -1		# DECRECE CUENTA DE PIXEL
-	bnez	$t1, drawBot		# SE REPITE EL LOOP HASTA CUANDO EL NUMERO DE PIXELES SEA 0
+	addi	$t1, $zero, 64		# REG DE t1 = 64 	
+	DrawBorder(4)
 	
 	# SECCION BORDE IZQUIERDO
 	la	$t0, Bufferbitmap	# SE CARGA LA DIRECCION INICIAL DEL BITMAP DENUEVO
 	addi	$t1, $zero, 256		# REG DE t1 = 256 COLUMNA 
-
-drawLeft:				#INGRESO LOOP PARA DIBUJAR LEFT
-	sw	$t2, 0($t0)		# ALMACENA VALOR DE MEMORIA DE $t0 EN $t2, direccion inicial bitmap,pinta
-	addi	$t0, $t0, 256		# SIGUIENTE PIXEL
-	addi	$t1, $t1, -1		# DECRECE CUENTA DE PIXEL
-	bnez	$t1, drawLeft		# SE REPITE EL LOOP HASTA CUANDO EL NUMERO DE PIXELES SEA 0
+	DrawBorder(256)
 	
 	# SECCION BORDE DERECHO
 	la	$t0, Bufferbitmap	# SE CARGA LA DIRECCION INICIAL DEL BITMAP DENUEVO
 	addi	$t0, $t0, 508		# PIXEL INICIADOR ARRIBA DERECHA
 	addi	$t1, $zero, 255		#REG DE t1 = 255 COLUMNA 
+	DrawBorder(256)
 
-drawRight:				#INGRESO LOOP PARA DIBUJAR RIGHT
-	sw	$t2, 0($t0)		# ALMACENA VALOR DE MEMORIA DE $t0 EN $t2, direccion inicial bitmap,pinta GUARDA
-	addi	$t0, $t0, 256		# SIGUIENTE PIXEL
-	addi	$t1, $t1, -1		# DECRECE CUENTA DE PIXEL
-	bnez	$t1, drawRight		# SE REPITE EL LOOP HASTA CUANDO EL NUMERO DE PIXELES SEA 0
-	
 	#SERPIENTE SECCION
 	la	$t0, Bufferbitmap	# SE CARGA LA DIRECCION INICIAL DEL BITMAP DENUEVO
 	lw	$s2, tail		# s2 = COLA SERPIENTE
 	lw	$s3, snakeUp		# s3 = DIRECCION(INICIAL HACIA ARRIBA)
+	
 	#DIBUJO SERPIENTE
 	add	$t1, $s2, $t0		# t1 = COLA EMPIEZA EN EL BITMAP
 	sw	$s3, 0($t1)		# DIBUJA EL PIXEL DONDE SE ENCUENTRA LA SERPIENTE
 	addi	$t1, $t1, -256		# SETEAMOS A $t1 UN PIXEL POR ENCIMA POR SNAKEUP
 	sw	$s3, 0($t1)		# DIBUJO PIXEL DE DONDE SE ENCUENTRA ACTUALMENTE LA SERPIENTE
+	
 	#DIBUJO PRIMERA MANZANA
 	jal 	drawApple		#SALTO HASTA LA SIGUIENTE SUBSECCION DE DRAWAPPLE
 
 gameUpdateLoop:
-
 	lw	$t3, 0xffff0004		# EN MIPS 0xffff0004 SE UTILIZA PARA OBTENER LA TECLA PRESIONADA, EN ESTE CASO GUARDAMOS ESTE VALOR EN REG $t3
 	
 	### Sleep for 66 ms so frame rate is about 15
@@ -124,40 +130,19 @@ gameUpdateLoop:
 
 moveUp:
 	lw	$s3, snakeUp	# REG $s3 CONTENDRA O GUARDARA LA DIRECCION DE LA SERPIENTE
-	add	$a0, $s3, $zero	
-	jal	updateSnake	#SALTO HASTA LA SIGUIENTE SUBSECCION DE updateSnake
+	moveSnake
 	
-	
-	jal 	updateHead # SALTO HASTA LA SIGUIENTE SUBSECCION para mover a la serpiente
-	
-	j	justExit 	#SALTO HACIA justExit que ejecuta denuevo gameUpdateLoop
-
 moveDown:
 	lw	$s3, snakeDown	# REG $s3 CONTENDRA O GUARDARA LA DIRECCION DE LA SERPIENTE
-	add	$a0, $s3, $zero	
-	jal	updateSnake	#SALTO HASTA LA SIGUIENTE SUBSECCION DE updateSnake
-	
-	jal 	updateHead # SALTO HASTA LA SIGUIENTE SUBSECCION para mover a la serpiente
-	
-	j	justExit	#SALTO HACIA justExit que ejecuta denuevo gameUpdateLoop
-	
+	moveSnake
+
 moveLeft:
 	lw	$s3, snakeLeft	# # REG $s3 CONTENDRA O GUARDARA LA DIRECCION DE LA SERPIENTE
-	add	$a0, $s3, $zero	
-	jal	updateSnake
-	
-	jal 	updateHead
-	
-	j	justExit	#SALTO HACIA justExit que ejecuta denuevo gameUpdateLoop
+	moveSnake
 	
 moveRight:
 	lw	$s3, snakeRight	# s3 = direction of snake
-	add	$a0, $s3, $zero	
-	jal	updateSnake #SALTO HASTA LA SIGUIENTE SUBSECCION DE updateSnake
-
-	jal 	updateHead # SALTO HASTA LA SIGUIENTE SUBSECCION para mover a la serpiente
-
-	j	justExit	#SALTO HACIA justExit que ejecuta denuevo gameUpdateLoop
+	moveSnake
 
 justExit:
 	j 	gameUpdateLoop		
@@ -196,109 +181,83 @@ updateSnake:
 	beq	$a0, $t2, setSpeedRight	#SI DIRECCION DE LA CABEZA Y EL COLOR A PINTAR SON IGUAL EJECUTA SUBSECCION DE VELOCIDAD CORRESPONDIENTE PARA QUE CAMINE LA SERPIENTE
 	
 setSpeedUp:
-	addi	$t5, $zero, 0		# SETEO VELOCIDAD X 0
-	addi	$t6, $zero, -1	 	# SETEO VELOCIDAD Y -1, ESTO SE DEBE A QUE SE ENCUENTRA INVERTIDO EL PLANO EN BITMAP
-	sw	$t5, speedx		# SE GUARDA EN LA SPEEDX EL VALOR CORRESPONDIENTE A ESA VELOCIDAD
-	sw	$t6, speedy		# SE GUARDA EN LA SPEEDY EL VALOR CORRESPONDIENTE A ESA VELOCIDAD
-	j exitSpeed
+	speed(0, -1) 
 	
 setSpeedDown:
-	addi	$t5, $zero, 0		# SETEO VELOCIDAD X 0
-	addi	$t6, $zero, 1 		# SETEO VELOCIDAD Y 1, ESTO SE DEBE A QUE SE ENCUENTRA INVERTIDO EL PLANO EN BITMAP
-	sw	$t5, speedx		# SE GUARDA EN LA SPEEDX EL VALOR CORRESPONDIENTE A ESA VELOCIDAD
-	sw	$t6, speedy		# SE GUARDA EN LA SPEEDY EL VALOR CORRESPONDIENTE A ESA VELOCIDAD
-	j exitSpeed
+	speed(0, 1) 
 	
 setSpeedLeft:
-	addi	$t5, $zero, -1		# SETEO VELOCIDAD X -1
-	addi	$t6, $zero, 0 		# SETEO VELOCIDAD Y 0
-	sw	$t5, speedx		# SE GUARDA EN LA SPEEDX EL VALOR CORRESPONDIENTE A ESA VELOCIDAD
-	sw	$t6, speedy		# SE GUARDA EN LA SPEEDY EL VALOR CORRESPONDIENTE A ESA VELOCIDAD
-	j exitSpeed
+	speed(-1, 0)
 	
 setSpeedRight:
-	addi	$t5, $zero, 1		# SETEO VELOCIDAD X 1
-	addi	$t6, $zero, 0 		# SETEO VELOCIDAD Y 0
-	sw	$t5, speedx		# SE GUARDA EN LA SPEEDX EL VALOR CORRESPONDIENTE A ESA VELOCIDAD
-	sw	$t6, speedy		# SE GUARDA EN LA SPEEDY EL VALOR CORRESPONDIENTE A ESA VELOCIDAD
-	j exitSpeed
+	speed(1, 0)
 	
 exitSpeed:
 	
-	lw 	$t2, RedColor	# CARGO COLOR de manzana
+	lw 	$t2, RedColor	        # CARGO COLOR de manzana
 	bne	$t2, $t4, headNotApple	# SI NO SON IGUALES, PIXEL COLOR ORIGINAL GUARDADO ANTERIORMENTE Y COLOR DE MANZANA, SE EJECUTA SUBSECCION HEADNOTAPPLE
 	
 	jal 	newLocApple
 	jal     eatAppleSound
 	
-	jal	drawApple	#SALTO DIBUJO NUEVA MANZANA 
+	jal	drawApple	        #SALTO DIBUJO NUEVA MANZANA 
 	TheAppleCount 
-	lw $t7, appleCount
-   	 addi $t7, $t7, 1
-   	 sw $t7,appleCount
-   	 li $v0, 1
-   	 lw $a0, appleCount
-   	 syscall
+	lw      $t7, appleCount
+   	addi    $t7, $t7, 1
+   	sw      $t7,appleCount
+   	li      $v0, 1
+   	lw      $a0, appleCount
+   	syscall
     
 	j	exitUpdateSnake
 	
 headNotApple:
-
-	lw	$t2, SkyColor		# CARGA COLOR CIELO
+	lw	$t2, SkyColor		# CARGA COLOR VERDE
 	beq	$t2, $t4, HeadValidation	
-	jal gameOverSound
-	addi 	$v0, $zero, 10	# GAME OVER
-	
-	syscall
-	
-HeadValidation:
+	jal     gameOverSound
+	# Mostrar mensaje por consola
+	la	$a0, finDelJuego	# Cargar direccion de la cadena de caracteres
+	li	$v0, 4			# Codigo de la llamada del sistema para imprimir una cadena de caracteres
+	syscall				# Imprimir el mensaje por consola
+	j	ExitProgram		# Salir del programa
 
+HeadValidation:
 	lw	$t0, tail		# t0 = tail
 	la 	$t1, Bufferbitmap	# CARGA DIRECCION DE BITMAP
 	add	$t2, $t0, $t1		# SE OBTIENE POSICION DE LA COLA EN BITMAP
-	lw 	$t3, SkyColor	        # CARGA COLOR CIELO
+	lw 	$t3, SkyColor	        # CARGA COLOR VERDE
 	lw	$t4, 0($t2)		# CARGA COLOR Y DIRECCION COLA
 	sw	$t3, 0($t2)		# SE REEMPLAZA COLOR DE COLA CON COLOR DE BACKGROUND
 	
-	lw	$t5, snakeUp			# SE CARGA EL VALOR ASIGNADO 
-	beq	$t5, $t4, NewTailUp		#SI DIRECCION DE LA COLA Y EL COLOR A PINTAR SON IGUAL EJECUTA SUBSECCION DE ACTUALIZACION DE COLA CORRESPONDIENTE PARA QUE CAMINE LA SERPIENTE
+	lw	$t5, snakeUp		# SE CARGA EL VALOR ASIGNADO 
+	beq	$t5, $t4, NewTailUp	#SI DIRECCION DE LA COLA Y EL COLOR A PINTAR SON IGUAL EJECUTA SUBSECCION DE ACTUALIZACION DE COLA CORRESPONDIENTE PARA QUE CAMINE LA SERPIENTE
 	
-	lw	$t5, snakeDown			# SE CARGA EL VALOR ASIGNADO 
+	lw	$t5, snakeDown		# SE CARGA EL VALOR ASIGNADO 
 	beq	$t5, $t4, NewTailDown	#SI DIRECCION DE LA COLA Y EL COLOR A PINTAR SON IGUAL EJECUTA SUBSECCION DE ACTUALIZACION DE COLA  CORRESPONDIENTE PARA QUE CAMINE LA SERPIENTE
 	
-	lw	$t5, snakeLeft			# SE CARGA EL VALOR ASIGNADO 
+	lw	$t5, snakeLeft		# SE CARGA EL VALOR ASIGNADO 
 	beq	$t5, $t4, NewTailLeft	#SI DIRECCION DE LA COLA Y EL COLOR A PINTAR SON IGUAL EJECUTA SUBSECCION DE ACTUALIZACION DE COLA CORRESPONDIENTE PARA QUE CAMINE LA SERPIENTE
 	
-	lw	$t5, snakeRight			# SE CARGA EL VALOR ASIGNADO 
+	lw	$t5, snakeRight		# SE CARGA EL VALOR ASIGNADO 
 	beq	$t5, $t4, NewTailRight	#SI DIRECCION DE LA COLA Y EL COLOR A PINTAR SON IGUAL EJECUTA SUBSECCION DE ACTUALIZACION DE COLA  CORRESPONDIENTE PARA QUE CAMINE LA SERPIENTE
 	
 NewTailUp:
-	addi	$t0, $t0, -256		# ACTUALIZACION DE COLA EJE X
-	sw	$t0, tail		# GUARDA O CARGA NUEVO VALOR DE COLA
-	j exitUpdateSnake
+	newTail(-256)
 	
 NewTailDown:
-	addi	$t0, $t0, 256		# ACTUALIZACION DE COLA  EJE X
-	sw	$t0, tail		# GUARDA O CARGA NUEVO VALOR DE COLA
-	j exitUpdateSnake
+	newTail(256)
 	
 NewTailLeft:
-	addi	$t0, $t0, -4		# ACTUALIZACION DE COLA  EJE Y
-	sw	$t0, tail		# GUARDA O CARGA NUEVO VALOR DE COLA
-	j exitUpdateSnake
+	newTail(-4)
 	
 NewTailRight:
-	addi	$t0, $t0, 4		# ACTUALIZACION DE COLA  EJE Y
-	sw	$t0, tail		# GUARDA O CARGA NUEVO VALOR DE COLA
-	j exitUpdateSnake
+	newTail(4)
 	
 exitUpdateSnake:
-	
 	lw 	$ra, 4($sp)	# load caller's return address
 	lw 	$fp, 0($sp)	# restores caller's frame pointer
 	addiu 	$sp, $sp, 24	# restores caller's stack pointer
 	jr 	$ra		# return to caller's code
-	
 	
 updateHead:
 	addiu 	$sp, $sp, -24	# allocate 24 bytes for stack
@@ -315,10 +274,7 @@ updateHead:
 	sw	$t5, posx	# SE GUARDAN LOS VALORES ACTUALIZADOS
 	sw	$t6, posy	# SE GUARDAN LOS VALORES ACTUALIZADOS
 	
-	lw 	$ra, 4($sp)	# load caller's return address
-	lw 	$fp, 0($sp)	# restores caller's frame pointer
-	addiu 	$sp, $sp, 24	# restores caller's stack pointer
-	jr 	$ra		# return to caller's code	
+	jal exitUpdateSnake	
 
 drawApple:
 	addiu 	$sp, $sp, -24	# allocate 24 bytes for stack
@@ -341,10 +297,7 @@ drawApple:
 	li	$t4, 0x00ff0000		#CARGA COLOR ROJO
 	sw	$t4, 0($t0)		# SE GUARDA LA DIRECCION DE ESTO
 	
-	lw 	$ra, 4($sp)	# load caller's return address
-	lw 	$fp, 0($sp)	# restores caller's frame pointer
-	addiu 	$sp, $sp, 24	# restores caller's stack pointer
-	jr 	$ra		# return to caller's code		
+	jal exitUpdateSnake	
 
 newLocApple:
 	addiu 	$sp, $sp, -24	# allocate 24 bytes for stack
@@ -375,7 +328,7 @@ locRandom:
 	add	$t0, $t4, $t0		# POSICIONA POSICION ALEATORIA EN BITMPA
 	lw	$t5, 0($t0)		# GUARDA POSICION ORIGINAL
 	
-	lw	$t6,  SkyColor		# CARGA COLOR CIELO
+	lw	$t6,  SkyColor		# CARGA COLOR VERDE
 	beq	$t5, $t6, Apple	#SALTO POSICION PARA NUEVA MANZANA
 	j locRandom
 
@@ -383,25 +336,28 @@ Apple:
 	sw	$t1, applex
 	sw	$t2, appley	
 
-	lw 	$ra, 4($sp)	# load caller's return address
-	lw 	$fp, 0($sp)	# restores caller's frame pointer
-	addiu 	$sp, $sp, 24	# restores caller's stack pointer
-	jr 	$ra		# return to caller's code	
+	jal exitUpdateSnake
+
 eatAppleSound:
-    li $v0, 31      # carga la llamada del sistema para el sonido
-    li $a0, 72      # establece la frecuencia del sonido (72 = C)
-    li $a1, 1000    # establece la duración del sonido (en milisegundos)
-    li $a2, 12      # establece el volumen del sonido (0-127)
-    li $a3, 127     # establecer canal de sonido (0-3)
-    syscall         # hace el sonido
-    jr $ra          # return
+    li $v0, 31      	# Carga la llamada del sistema para el sonido
+    li $a0, 72     	# Establecer el tipo de sonido 
+    li $a1, 1000    	# Establecer la duracion del sonido (en milisegundos)
+    li $a2, 12     	# Establecer la frecuencia
+    li $a3, 127     	# Establece el volumen del sonido 
+    syscall        	# Realizar una llamada al sistema para reproducir el sonido 
+    jr $ra         	
+
 gameOverSound:		
-	li $v0, 31# carga la llamada del sistema para el sonido
-	li $a0, 5# establece la frecuencia del sonido
-	li $a1, 2000 # establece la duración del sonido (en milisegundos)
-	li $a2, 0
-	li $a3, 127	
-	syscall	# hace el sonido
+	li $v0, 31   	# Carga la llamada del sistema para el sonido
+	li $a0, 5    	# Establecer el tipo de sonido "beep"
+	li $a1, 2000    # Establecer la duracion del sonido (en milisegundos)
+	li $a2, 0       # Establecer la frecuencia
+	li $a3, 127	# Establece el volumen del sonido 
+	syscall	     	# Realizar una llamada al sistema para reproducir el sonido 
 	jr $ra 
+	
+ExitProgram:
+	li $v0, 10      # Codigo de la llamada del sistema para salir del programa
+	syscall         # Llamar al sistema para salir del programa
 
    
